@@ -1,6 +1,6 @@
 # RxJava
 本demo测试Rxjava，如何引用呢？
-// 导入第三方库
+## 导入第三方库
 compile 'io.reactivex:rxjava:1.2.7'
 compile 'io.reactivex:rxandroid:1.2.1'
 
