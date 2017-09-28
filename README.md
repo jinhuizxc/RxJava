@@ -11,12 +11,12 @@
 Gson : 
 - com.squareup.retrofit:converter-gson
 Jackson: 
-com.squareup.retrofit:converter-jackson
+- com.squareup.retrofit:converter-jackson
 Moshi: 
-com.squareup.retrofit:converter-moshi
+- com.squareup.retrofit:converter-moshi
 Protobuf: 
-com.squareup.retrofit:converter-protobuf
+- com.squareup.retrofit:converter-protobuf
 Wire: 
-com.squareup.retrofit:converter-wire
+- com.squareup.retrofit:converter-wire
 Simple XML: 
-com.squareup.retrofit:converter-simplexml
+- com.squareup.retrofit:converter-simplexml
