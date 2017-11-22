@@ -3,8 +3,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="com.example.jh.rxjava.MainActivity">
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="RxJava测试demo"
+        android:gravity="center"/>
     <ImageView
         android:id="@+id/imageView"
         android:scaleType="fitXY"

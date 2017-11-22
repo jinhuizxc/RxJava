@@ -1,17 +1,26 @@
 package com.example.jh.rxjava;
 
 import android.graphics.drawable.Drawable;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import rx.Observable;
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action0;
 import rx.functions.Action1;
+import rx.functions.Func0;
+import rx.functions.Func1;
+import rx.functions.Func2;
+import rx.observables.GroupedObservable;
 
 /**
  * 本demo测试RxJava基本使用方法
@@ -37,8 +46,29 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.e(TAG,"main Thread =" + Thread.currentThread().getName());
-        // Observer: 观察者
+        Log.e(TAG, "main Thread =" + Thread.currentThread().getName());
+        /**
+         * 1、创建被观察者   Observable: 被观察者
+         * 操作符分类
+         * 创建Observable的操作符
+         * Create、Just、From、Defer、Empty/Never/Throw/
+         * Interval、Range、Repeat、Start、Timer
+         *
+         */
+        Observable observable = Observable.create(new Observable.OnSubscribe<String>() {
+            @Override
+            public void call(Subscriber<? super String> subscriber) {
+                Log.e(TAG, "call方法被执行");
+                subscriber.onNext("Hello");
+                subscriber.onNext("java");
+                subscriber.onNext("android");
+                subscriber.onCompleted();
+                Log.e(TAG, "onCompleted");
+            }
+        });
+
+
+        // 2、创建观察者     Observer: 观察者
         Observer<String> observer = new Observer<String>() {
             @Override
             public void onNext(String s) {
@@ -55,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "观察者 Error!");
             }
         };
-        // Subscriber: 订阅者
+        // 3、添加订阅      Subscriber: 订阅者
         Subscriber<String> subscriber = new Subscriber<String>() {
             @Override
             public void onNext(String s) {
@@ -73,25 +103,347 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-
-        // Observable: 被观察者
-        Observable observable = Observable.create(new Observable.OnSubscribe<String>() {
-
-            @Override
-            public void call(Subscriber<? super String> subscriber) {
-                Log.e(TAG, "call方法被执行");
-                subscriber.onNext("Hello");
-                subscriber.onNext("java");
-                subscriber.onNext("android");
-                subscriber.onCompleted();
-                Log.e(TAG, "onCompleted");
-            }
-        });
         // 只有观察者与订阅者被观察者订阅的话，才会进行方法的调用。
         // 下面代码会调用call方法
-        observable.subscribe(observer);
-        observable.subscribe(subscriber);
+        observable.subscribe(observer);     // 订阅观察者
+        observable.subscribe(subscriber);   // 订阅订阅者
 
+
+        /**
+         * Just操作符,not create 直接运行，比较快捷。
+         */
+        Observable.just("RxJava学习").subscribe(new Subscriber<String>() {
+            @Override
+            public void onCompleted() {
+                Log.e(TAG, " RxJava学习 onCompleted!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(TAG, "RxJava学习 Error!");
+            }
+
+            @Override
+            public void onNext(String s) {
+                Log.e(TAG, "RxJava学习 onNext!");
+            }
+        });
+
+        /**
+         * From 类型转换，成为obseverable的对象
+         * 数组、链表等，可以查看官方文档
+         */
+//        Observable.from(new Integer[]{1,2,3,4,5,6}).subscribe(new Subscriber<Integer>() {
+//            @Override
+//            public void onCompleted() {
+//                Log.e(TAG, "整型 onCompleted!");
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//                Log.e(TAG, "整型 Error!");
+//            }
+//
+//            @Override
+//            public void onNext(Integer integer) {
+//                Log.e(TAG, "整型 onNext! =" + integer);
+//            }
+//        });
+//        ArrayList<Integer> arrayList = new ArrayList<Integer>();
+        ArrayList<Integer> arrayList = new ArrayList<>();   // 建议换成这种创建链表方式
+        arrayList.add(1);
+        arrayList.add(2);
+        arrayList.add(3);
+        arrayList.add(4);
+        arrayList.add(5);
+        Observable.from(arrayList).subscribe(new Subscriber<Integer>() {
+            @Override
+            public void onCompleted() {
+                Log.e(TAG, "链表 onCompleted!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(TAG, "链表 Error!");
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                Log.e(TAG, "链表 onNext! =" + integer);
+            }
+        });
+        /**
+         * Defer，比较下just与defer的区别
+         * defer方法是字符串定义后在执行，just方法是先执行，后字符串定义
+         * 可以把定义字符串放在方法后进行统一验证！
+         */
+
+        ArrayList<Integer> arrayList1 = new ArrayList<>();   // 建议换成这种创建链表方式
+        arrayList1.add(1);
+        arrayList1.add(2);
+        arrayList1.add(3);
+        arrayList1.add(4);
+        arrayList1.add(5);
+//        Observable observable1 = Observable.just(str);
+        final String str = "哈哈";
+        Observable.defer(new Func0<Observable<String>>() {
+            @Override
+            public Observable<String> call() {
+                return Observable.just(str);
+            }
+        }).subscribe(new Subscriber<String>() {
+            @Override
+            public void onCompleted() {
+                Log.e(TAG, "defer onCompleted!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(TAG, "defer onError!");
+            }
+
+            @Override
+            public void onNext(String s) {
+                Log.e(TAG, "defer onNext! =" + s);
+            }
+        });
+
+        /**
+         * Empty/Never/Throw/  代码执行过程中的捕获异常，不做显示，可查看源码
+         *
+         * 注意timer与interval都是默认运行在一个新线程上面
+         * timer操作符既可以延迟执行一段逻辑，
+         * 也可以间隔执行一段逻辑，但是已经过时了，而是由interval操作符来间隔执行.
+         * timer延迟执行例子:如延迟5秒:
+         */
+//        Observable.timer(0, 5, TimeUnit.SECONDS).subscribe(new Observer<Long>() {
+//            @Override
+//            public void onCompleted() {
+//                Log.e(TAG, "------->onCompleted");
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//
+//            }
+//
+//            @Override
+//            public void onNext(Long aLong) {
+//                Log.e(TAG, "------>along：" + aLong + " time:" + SystemClock.elapsedRealtime());
+//            }
+//        });
+
+//        Observable.interval(0,5,TimeUnit.SECONDS).subscribe(new Observer<Long>() {
+//            @Override
+//            public void onCompleted() {
+//
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//
+//            }
+//
+//            @Override
+//            public void onNext(Long aLong) {
+//                Log.e(TAG, "------>along："+aLong+" time:"+SystemClock.elapsedRealtime());
+//            }
+//        });
+
+        /**
+         * Range、repeat这里设置重复2次
+         */
+        Observable.range(1, 10).repeat(2).subscribe(new Subscriber<Integer>() {
+            @Override
+            public void onCompleted() {
+                Log.e(TAG, "range onCompleted!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                Log.e(TAG, "range onNext! =" + integer);
+            }
+        });
+
+        /**
+         * Start与Timer只能参考官方文档了
+         */
+        // ————————————————————————————————————————
+
+        /**
+         *  转换Observable
+         *  类型: Map、FlatMap、GroupBy、Buffer、Scan、Window
+         */
+
+        // Map 一对一
+        Observable.just(123).map(new Func1<Integer, String>() {
+            @Override
+            public String call(Integer integer) {
+                return integer + "";
+            }
+        }).subscribe(new Subscriber<String>() {
+            @Override
+            public void onCompleted() {
+                Log.e(TAG, "map onCompleted!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(String s) {
+                Log.e(TAG, "map onNext! =" + s);
+            }
+        });
+        // FlatMap 一对多
+        Observable.just(1, 2, 3, 4, 5).flatMap(new Func1<Integer, Observable<? extends String>>() {
+
+
+            @Override
+            public Observable<? extends String> call(Integer integer) {
+                return Observable.just(integer + "");
+            }
+        }).subscribe(new Subscriber<String>() {
+            @Override
+            public void onCompleted() {
+                Log.e(TAG, "flatMap onCompleted!");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(String s) {
+                Log.e(TAG, "flatMap onNext! =" + s);
+            }
+        });
+        // GroupBy 对数据进行分组
+        Observable.just(1, 2, 3, 4, 5).groupBy(new Func1<Integer, Integer>() {
+            @Override
+            public Integer call(Integer integer) {
+                return integer % 2;
+            }
+        }).subscribe(new Observer<GroupedObservable<Integer, Integer>>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(final GroupedObservable<Integer, Integer> integer) {
+                integer.subscribe(new Subscriber<Integer>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(Integer data) {
+                        Log.e(TAG, "group:" + integer.getKey() + "data =" + data);
+                    }
+                });
+            }
+        });
+
+        //buffer  将数据进行2个值进行分组
+        Observable.range(1, 5).buffer(2).subscribe(new Observer<List<Integer>>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(List<Integer> integers) {
+                Log.e(TAG, "buffer onNext =" + integers);
+            }
+        });
+
+        //  scan  结果是1/3/6/10/15
+        Observable.range(1, 5).scan(new Func2<Integer, Integer, Integer>() {
+            @Override
+            public Integer call(Integer integer, Integer integer2) {
+                return integer + integer2;  // 求和操作
+            }
+        }).subscribe(new Subscriber<Integer>() {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                Log.e(TAG, "scan onNext =" + integer);
+            }
+        });
+
+        /**
+         *  window
+         *  window操作符会在时间间隔内缓存结果，
+         *  类似于buffer缓存一个list集合，区别在于window将这个结果集合封装成了observable
+         *  window(long timespan, TimeUnit unit)
+         *  第一个是缓存的间隔时间，第二个参数是时间单位
+         */
+
+
+        Observable.interval(1, TimeUnit.SECONDS).take(10).window(3, TimeUnit.SECONDS).subscribe(new Observer<Observable<Long>>() {
+            @Override
+            public void onCompleted() {
+                Log.e(TAG, "window------>onCompleted()");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.e(TAG, "window------>onError()" + e);
+            }
+
+            @Override
+            public void onNext(Observable<Long> integerObservable) {
+                Log.e(TAG, "window------->onNext()");
+                integerObservable.subscribe(new Action1<Long>() {
+                    @Override
+                    public void call(Long integer) {
+                        Log.e(TAG, "window------>call():" + integer);
+                    }
+                });
+            }
+        });
+
+        /**
+         * 过滤Observable
+         * 过滤性操作符：
+         * Debounce(在操作间隔一定的时间内没有做任何操作就发送给观察者)、
+         * Distinct 去掉重复
+         * ElementAt 取指定位置的数据
+         */
 
         // ##############################################
         /**
@@ -137,7 +489,7 @@ public class MainActivity extends AppCompatActivity {
 
 //        a. 打印字符串数组
 //        将字符串数组 names 中的所有字符串依次打印出来：
-        String[] names ={"a", "b", "c"};
+        String[] names = {"a", "b", "c"};
         Observable.from(names)
                 .subscribe(new Action1<String>() {
                     @Override
@@ -154,7 +506,7 @@ public class MainActivity extends AppCompatActivity {
 //        Observable.create(new Observable.OnSubscribe<Drawable>() {
 //            @Override
 //            public void call(Subscriber<? super Drawable> subscriber) {
-              // 这里需要  minSdkVersion为21
+        // 这里需要  minSdkVersion为21
 //                Drawable drawable = getTheme().getDrawable(drawableRes);
 //                subscriber.onNext(drawable);
 //                subscriber.onCompleted();
