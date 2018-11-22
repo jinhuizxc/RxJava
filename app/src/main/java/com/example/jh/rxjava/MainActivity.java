@@ -23,6 +23,10 @@ import rx.functions.Func2;
 import rx.observables.GroupedObservable;
 
 /**
+ *
+ * 慕课网 Rxjava与RxAndroid
+ * https://www.imooc.com/video/15526
+ *
  * 本demo测试RxJava基本使用方法
  * RxJava 的基本实现主要有三点：
  * <p>
